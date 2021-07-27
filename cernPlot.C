@@ -1,0 +1,67 @@
+#include "TFile.h"
+#include "TTree.h"
+
+/*
+This macro takes three root files output from the Monitor_Lab Hadr04 application, 
+and compares the dose rates in a one dimensional histogram that intersects the center
+of the flux peak. 
+
+The files are hardcoded in the filenames variable, and should be changed to work with 
+the necessary files
+
+*/
+
+void cernPlot()
+{
+  //Define the style for Histograms
+  gStyle->SetHistMinimumZero();
+  const Int_t NRGBs = 5;
+  const Int_t NCont = 255;
+  Double_t stops[NRGBs] = { 0.00, 0.34, 0.61, 0.84, 1.00 };
+  Double_t red[NRGBs]   = { 0.00, 0.00, 0.87, 1.00, 0.51 };
+  Double_t green[NRGBs] = { 0.00, 0.81, 1.00, 0.20, 0.00 };
+  Double_t blue[NRGBs]  = { 0.51, 1.00, 0.12, 0.00, 0.00 };
+  TColor::CreateGradientColorTable(NRGBs, stops, red, green, blue, NCont);
+  gStyle->SetNumberContours(NCont);
+  gStyle->SetTitleFont(22, "");
+  gStyle->SetTitleSize(.08, "");
+  gStyle->SetTitleFont(22, "xyz");;
+  gStyle->SetTitleSize(0.05,"xyz");
+  gStyle->SetOptStat("");
+
+
+  //Files to compare go here
+  const char * filenames[3] = {"run01.root"};
+
+  TH2F* h = new TH2F("Neutron Capture Positions", "Neutron Capture Positions", 100, -5, 5, 100, -5, 5);
+
+  //Here we loop through the files in filenames, and fill the histograms
+  for(int i = 0 ; i < 1; i++ ){
+    TFile* f = new TFile(filenames[i]);
+    printf("%s \n", filenames[i]);
+
+    //Create reader objects
+    TTreeReader *testReaderN = new TTreeReader("ncapture", f);
+
+
+
+    //Reader objects to read the positions of neutrons/gammas
+    //that have crossed a boundary
+    TTreeReaderValue<Double_t> x(*testReaderN, "x");
+    TTreeReaderValue<Double_t> y(*testReaderN, "y");
+    TTreeReaderValue<Double_t> z(*testReaderN, "z");
+
+    //Filter out only the positions which lie on the top plane of the polyethelyne
+    while(testReaderN->Next()){
+      h->Fill(*x, *y);
+    }
+
+  }
+
+  TCanvas* c1 = new TCanvas("ncap", "ncap");
+
+  h->Draw("colz");
+  
+
+}
+				 
